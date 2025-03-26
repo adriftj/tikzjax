@@ -37,13 +37,17 @@ function openSync( filename, mode )
   if (filename.match(/\.tfm$/)) {
     buffer = Uint8Array.from( tfmData( filename.replace(/\.tfm$/, '' ) ) );
   }
-  
-  files.push({ filename: filename,
-               position: 0,
-               erstat: 0,
-               buffer: buffer,
-               descriptor: files.length
-             });
+
+  files.push({
+    filename: filename,
+    position: 0,
+    position2: 0,                         
+    erstat: 0,
+    eoln: false,      
+    descriptor: files.length,
+    content: Buffer.from(buffer),
+    buffer: buffer
+  });
 
   return files.length - 1;
 }
@@ -106,15 +110,53 @@ var process = {
 var memory = undefined;
 var inputBuffer = undefined;
 var callback = undefined;
+var wasmExports = undefined;
 
 export function setMemory(m) {
   memory = m;
+}
+
+export function setWasmExports(m) {
+  wasmExports = m;
 }
 
 export function setInput(input, cb) {
   inputBuffer = input;
   if (cb) callback = cb;
 }
+
+
+/****************************************************************/
+// provide asyncify features
+
+let DATA_ADDR = 2400 * 1024*64;
+let END_ADDR = 2500 * 1024*64;
+let windingDepth = 0;
+let sleeping = false;
+
+export function startUnwind() {
+  if (view) {
+    view[DATA_ADDR >> 2] = DATA_ADDR + 8;
+    view[DATA_ADDR + 4 >> 2] = END_ADDR;
+  }
+
+  wasmExports.asyncify_start_unwind(DATA_ADDR);
+  windingDepth = windingDepth + 1;
+}
+
+export function startRewind() {
+  wasmExports.asyncify_start_rewind(DATA_ADDR);
+  wasmExports.main();
+  //if (windingDepth == 0) {
+  //callback();
+  //}
+}
+
+export function stopRewind() {
+  windingDepth = windingDepth - 1;
+  wasmExports.asyncify_stop_rewind();
+}
+
 
 /****************************************************************/
 // provide time back to tex
@@ -219,11 +261,14 @@ export function reset(length, pointer) {
     if (filename == 'TeXformats:TEX.POOL')
       filename = "tex.pool";
 
-    if (filename == "TTY:") {
+  if (filename == "TTY:") {
       files.push({ filename: "stdin",
                    stdin: true,
                    position: 0,
-                   erstat: 0
+                   position2: 0,                   
+                   erstat: 0,
+                   eoln: false,
+                   content: Buffer.from(inputBuffer)
                  });
       return files.length - 1;
     }
@@ -246,6 +291,14 @@ export function rewrite(length, pointer) {
     }
     
   return openSync(filename, 'w');
+}
+
+export function getfilesize(length, pointer) {
+  return 0;
+}
+
+export function snapshot() {
+  return 1;
 }
 
 export function close(descriptor) {
@@ -277,7 +330,90 @@ export function eoln(descriptor) {
     else
       return 0;
 }
+
+
+export function inputln(descriptor, bypass_eoln, bufferp, firstp, lastp, max_buf_stackp, buf_size) {
+    var file = files[descriptor];
+    var last_nonblank = 0; // |last| with trailing blanks removed
+
+    var buffer = Buffer.from( memory, bufferp, buf_size);
+    var first = new Uint32Array( memory, firstp, 1 );
+    var last = new Uint32Array( memory, lastp, 1 );
+    // FIXME: this should not be ignored
+    var max_buf_stack = new Uint32Array( memory, max_buf_stackp, 1 );
+
+    // cf.\ Matthew 19\thinspace:\thinspace30
+    last[0] = first[0];
+
+    // input the first character of the line into |f^|
+    if (bypass_eoln) {
+      if (!file.eof) {
+        if (file.eoln) {
+          file.position2 = file.position2 + 1;
+        }
+      }
+    }
+  
+    let endOfLine = file.content.indexOf(10, file.position2);
+    if (endOfLine < 0) endOfLine = file.content.length;
+      
+    if (file.position2 >= file.content.length) {
+      if (file.stdin) {
+        if (callback) callback();
+      }
+      
+      file.eof = true;
+      return false;
+    } else {
+      var bytesCopied = file.content.copy( buffer, first[0], file.position2, endOfLine );
+      
+      last[0] = first[0] + bytesCopied;
+      
+      while( buffer[last[0] - 1] == 32 )
+        last[0] = last[0] - 1;
+      
+      file.position2 = endOfLine;
+      file.eoln = true;
+    }
     
+    return true;
+}
+
+export function evaljs(str_number, str_poolp, str_startp, pool_ptrp, pool_size, max_strings,
+                   eqtbp,active_base,eqtb_size,count_base) {
+    var str_start = new Uint32Array( memory, str_startp, max_strings+1);
+    var pool_ptr = new Uint32Array( memory, pool_ptrp, 1);
+    var str_pool = new Uint8Array( memory, str_poolp, pool_size+1);
+    var length = str_start[str_number+1] - str_start[str_number];
+    var input = new Uint8Array( memory, str_poolp + str_start[str_number], length );
+    var string = new TextDecoder("ascii").decode(input);
+
+    var count = new Uint32Array( memory, eqtbp + 8*(count_base - active_base), 512 );
+    
+    const handler = {
+      get: function(target, prop, receiver) {
+        return target[2*prop];
+      },
+      set: function(target, prop, value) {
+        target[2*prop] = value;
+      }
+    };    
+    
+    var tex = {
+      print: function(s) {
+        const encoder = new TextEncoder('ascii');
+        const view = encoder.encode(s);
+        const b = Buffer.from(view);
+        str_pool.set( b, pool_ptr[0] );
+        pool_ptr[0] += view.length;
+      },
+      count: new Proxy(count, handler)
+    };
+
+    var f = Function(['tex','window'],string);
+    f(tex, window);
+}
+
 export function get(descriptor, pointer, length) {
     var file = files[descriptor];
 

@@ -1,5 +1,5 @@
 import { dvi2html } from 'dvi2html';
-import { Writable } from 'stream';
+import { Writable } from 'readable-stream';
 import * as library from './library';
 import pako from 'pako';
 import fetchStream from 'fetch-readablestream';
@@ -17,9 +17,9 @@ var url = new URL(document.currentScript.src);
 var host = url.host;
 var urlRoot = url.protocol + '//' + host;
 
-let pages = 1000;
-var coredump;
-var code;
+let pages = 2500;
+var coredump = undefined;
+var code = undefined;
 
 async function load() {
   let tex = await fetch(urlRoot + '/tex.wasm');
@@ -59,30 +59,35 @@ async function tex(input) {
   library.writeFileSync( "sample.tex", Buffer.from(input) );
 
   let memory = new WebAssembly.Memory({initial: pages, maximum: pages});
-  
+
   let buffer = new Uint8Array( memory.buffer, 0, pages*65536 );
   buffer.set( copy(coredump) );
-  
+
   library.setMemory( memory.buffer );
   library.setInput( " sample.tex \n\\end\n" );
-  
-  let results = await WebAssembly.instantiate(code, { library: library,
-                                                      env: { memory: memory }
-                                                    });
+
+  var module = new WebAssembly.Module(code);
+  var wasm = new WebAssembly.Instance(module, { library: library,
+                                            env: { memory: memory } } );
+
+  const wasmExports = wasm.exports;
+  library.setWasmExports( wasmExports );
+
+  wasm.exports.main();
 
   return library.readFileSync( "sample.dvi" );
 }
 
 export async function TikZJax(root){
-  await load();
-  
   async function process(elt){
+    // only load resources if we actually need to process tikz
+    if (coredump == undefined) {
+      await load();
+    }
+    
     var text = elt.childNodes[0].nodeValue;
-
-    var div = document.createElement('div');    
-    
+    var div = document.createElement('div');
     let dvi = await tex(text);
-    
     let html = "";  
     const page = new Writable({
       write(chunk, _, callback) {
@@ -91,23 +96,22 @@ export async function TikZJax(root){
       }
     });
 
-    async function* streamBuffer() {
-      yield Buffer.from(dvi);
-      return;
-    }  
-
-    let machine = await dvi2html( streamBuffer(), page );
+    let machine = dvi2html( Buffer.from(dvi), page );
     div.style.display = 'flex';
     div.style.width = machine.paperwidth.toString() + "pt";
     div.style.height = machine.paperheight.toString() + "pt";
-    div.style['align-items'] = 'center';
-    div.style['justify-content'] = 'center';        
+    //div.style['align-items'] = 'center';
+    //div.style['justify-content'] = 'center';
 
     div.innerHTML = html;
     let svg = div.getElementsByTagName('svg');
-    svg[0].setAttribute("width", machine.paperwidth.toString() + "pt");
-    svg[0].setAttribute("height", machine.paperheight.toString() + "pt");
-    svg[0].setAttribute("viewBox", `-72 -72 ${machine.paperwidth} ${machine.paperheight}`);
+    if (svg[0]) {
+      svg[0].setAttribute("width", machine.paperwidth.toString() + "pt");
+      svg[0].setAttribute("height", machine.paperheight.toString() + "pt");
+      svg[0].setAttribute("viewBox", `-72 -72 ${machine.paperwidth} ${machine.paperheight}`);
+    } else {
+      console.error( "Missing svg element" );
+    }
 
     elt.parentNode.replaceChild(div, elt);
   };

@@ -2,5 +2,7 @@ import { TikZJax } from "./TikZJax";
 
 window.TikZJax = TikZJax;
 if (!window.TikZJaxNoAutostart) {
-    window.onload = TikZJax(document);
+    document.addEventListener("DOMContentLoaded", function () {
+        TikZJax(document);
+    });
 }

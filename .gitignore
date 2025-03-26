@@ -1,0 +1,9 @@
+# Temp files
+*.*~
+*.log
+node_modules/
+dist/
+package-lock.json
+
+# Files that we don't want to ignore
+!.gitignore
