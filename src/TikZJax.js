@@ -78,25 +78,32 @@ async function tex(input) {
   return library.readFileSync( "sample.dvi" );
 }
 
-export async function TikZJax(root){
-  async function process(elt){
-    // only load resources if we actually need to process tikz
-    if (coredump == undefined) {
-      await load();
+async function tex2html(text) {
+  // only load resources if we actually need to process tikz
+  if (coredump == undefined) {
+    await load();
+  }
+  let dvi = await tex(text);
+  let html = "";  
+  const page = new Writable({
+    write(chunk, _, callback) {
+      html = html + chunk.toString();
+      callback();
     }
-    
+  });
+  let machine = dvi2html( Buffer.from(dvi), page );
+  return {machine, html};
+}
+
+export async function TikZJax(root){
+  if(typeof root === 'string') {
+    return tex2html(root);
+  }
+
+  async function process(elt){
     var text = elt.childNodes[0].nodeValue;
     var div = document.createElement('div');
-    let dvi = await tex(text);
-    let html = "";  
-    const page = new Writable({
-      write(chunk, _, callback) {
-        html = html + chunk.toString();
-        callback();
-      }
-    });
-
-    let machine = dvi2html( Buffer.from(dvi), page );
+    let {machine, html} = await tex2html(text);
     div.style.display = 'flex';
     div.style.width = machine.paperwidth.toString() + "pt";
     div.style.height = machine.paperheight.toString() + "pt";
