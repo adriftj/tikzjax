@@ -1,0 +1,86 @@
+<html>
+<head>
+    <title>tikz live example</title>
+    <link rel="stylesheet" type="text/css" href="fonts.css">
+    <script src="tikzjax.js"></script>
+    <style>
+      .outer { display: flex; }
+      .left {
+        flex-grow: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .input { width: 800px; height: 600px; }
+      .btn { width: 80px; }
+      .result { flex-grow:1; }
+    </style>
+    <script>
+      async function showTikz() {
+        let eIn = document.getElementById('input');
+        let text = eIn.value;
+        let {machine, html} = tikzjax.render(text);
+
+        let eOut = document.getElementById('result');
+        eOut.style.display = 'flex';
+        //eOut.style.width = machine.paperwidth.toString() + "pt";
+        //eOut.style.height = machine.paperheight.toString() + "pt";
+        eOut.style['align-items'] = 'center';
+        eOut.style['justify-content'] = 'center';
+        eOut.innerHTML = html;
+        let svg = eOut.getElementsByTagName('svg');
+        if (svg[0]) {
+          svg[0].setAttribute("width", machine.paperwidth.toString() + "pt");
+          svg[0].setAttribute("height", machine.paperheight.toString() + "pt");
+          svg[0].setAttribute("viewBox", `-72 -72 ${machine.paperwidth} ${machine.paperheight}`);
+        } else {
+          console.error( "Missing svg element" );
+        }
+      }
+    </script>
+</head>
+<body>
+<div class="outer">
+<div class="left">
+<textarea class="input" id="input">
+\begin{tikzpicture}[scale=2]
+  \coordinate (A) at (0,0);
+  \coordinate (B) at (2,0);
+  \coordinate (C) at (1,1.5);
+  \draw[thick] (A) -- (B) -- (C) -- cycle;
+
+  \coordinate (MA) at ($(A)!0.5!(B)$);
+  \coordinate (MB) at ($(B)!0.5!(C)$);
+
+  \path let
+    \p1=($2*(B) - 2*(A)$), \p2=($2*(C) - 2*(B)$),
+    \p{A}=(A), \p{B}=(B), \p{C}=(C),
+    \n1={\x{B}^2+\y{B}^2-\x{A}^2-\y{A}^2}, \n2={\x{C}^2+\y{C}^2-\x{B}^2-\y{B}^2},
+    \n{cp}={\x1*\y2 - \y1*\x2},
+    \n{cx}={\n1/\n{cp}*\y2 - \n2/\n{cp}*\y1},
+    \n{cy}={\n2/\n{cp}*\x1 - \n1/\n{cp}*\x2}
+    in (\n{cx},\n{cy}) coordinate (O);
+
+  \draw[red, dashed] let
+    \p1=(O), \p2=(A), \n1={veclen(\x2-\x1, \y2-\y1)}
+    in (O) circle(\n1);
+
+  \foreach \point/\color in {A/black,B/black,C/black,O/red} {
+      \fill[\color] (\point) circle (2pt) node[below left=-3pt] {$\point$};
+  }
+
+  \node[right] at (current bounding box.east) {
+      \begin{minipage}{5cm}
+      \small
+      O formula:\\
+      $O = \frac{a^2(b-c) + b^2(c-a) + c^2(a-b)}{2\det(a,b,c)}$
+      \end{minipage}
+  };
+\end{tikzpicture}
+</textarea>
+<input type="button" value="show" class="btn" onclick="showTikz()">
+</div>
+<div id="result" class="result"></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<html>
+<head>
+    <title>tikz test</title>
+    <link rel="stylesheet" type="text/css" href="fonts.css">
+    <script src="tikzjax.js"></script>
+</head>
+<body>
+      <script type="text/tikz">
+      \begin{tikzpicture}[fill=blue!20]
+        \draw[help lines] (-1,-2) grid (6,3);
+        \path (0,0)  node(a) [ellipse,rotate=10,draw,fill]    {An ellipse}
+              (3,-1) node(b) [circle,draw,fill]               {A circle}
+              (2,2)  node(c) [rectangle,rotate=20,draw,fill]  {A rectangle}
+              (5,2)  node(d) [rectangle,rotate=-30,draw,fill] {Another rectangle};
+        \draw[thick] (a.south) -- (b) -- (c) -- (d);
+        \draw[thick,red,->] (a) |- +(1,3) -| (c) |- (b);
+        \draw[thick,blue,<->] (b) .. controls +(right:2cm) and +(down:1cm) .. (d);
+      \end{tikzpicture}
+    </script>
+          <script type="text/tikz">
+        \begin{tikzcd}
+          A \arrow[r, "\phi"] \arrow[d, red]
+            & B \arrow[d, "\psi" red] \\
+          C \arrow[r, red, "\eta" blue]
+            & |[blue, rotate=-15]| D
+        \end{tikzcd}
+      </script>
+      <script type="text/tikz">
+        \tikzset{
+            box/.style ={
+            rectangle,
+            rounded corners =5pt,
+            minimum width =50pt,
+            minimum height =20pt,
+            inner sep=5pt,
+            draw=blue
+          }
+        }
+        \begin{tikzpicture}
+        \node[box] (1) at(0,0) {1};
+        \node[box] (2) at(4,0) {2};
+        \node[box] (3) at(8,0) {3};
+        \draw[->] (1)--(2);
+        \draw[->] (2)--(3);
+        \node at(2,1) {a};
+        \node at(6,1) {b};
+        \end{tikzpicture}
+      </script>
+      <script type="text/tikz">
+        \begin{tikzpicture}
+        \draw [help lines] (0,0) grid (4,4);
+        \foreach \i in {0,0.1,...,2}
+        \fill ($(2,2) !\i! \i*180:(3,2)$) circle (2pt);
+        \end{tikzpicture}
+      </script>
+      <script type="text/tikz">
+        \begin{tikzpicture}
+        \node[circle,
+        minimum width =30pt ,
+        minimum height =30pt ,draw=blue] (1) at(0,2){$x_1$};
+        \node[circle,
+        minimum width =30pt ,
+        minimum height =30pt ,draw=blue] (2) at(0,0){$x_2$};
+        \node[circle,
+        minimum width =30pt ,
+        minimum height =30pt ,draw=orange] (3) at(2,-1){$a_3^{(2)}$};
+        \node[circle,
+        minimum width =30pt ,
+        minimum height =30pt ,draw=orange] (4) at(2,1){$a_2^{(2)}$};
+        \node[circle,
+        minimum width =30pt ,
+        minimum height =30pt ,draw=orange] (5) at(2,3){$a_1^{(2)}$};
+        \node[circle,
+        minimum width =30pt ,
+        minimum height =30pt ,draw=orange] (6) at(4,-1){$a_3^{(3)}$};
+        \node[circle,
+        minimum width =30pt ,
+        minimum height =30pt ,draw=orange] (7) at(4,1){$a_2^{(3)}$};
+        \node[circle,
+        minimum width =30pt ,
+        minimum height =30pt ,draw=orange] (8) at(4,3){$a_1^{(3)}$};
+        \node[circle,
+        minimum width =30pt ,
+        minimum height =30pt ,draw=purple] (9) at(6,2){$a_1^{(4)}$};
+        \node[circle,
+        minimum width =30pt ,
+        minimum height =30pt ,draw=purple] (10) at(6,0){$a_2^{(4)}$};
+        \draw[->] (1) --(3);
+        \draw[->] (1) --(4);
+        \draw[->] (1) --(5);
+        \draw[->] (2) --(3);
+        \draw[->] (2) --(4);
+        \draw[->] (2) --(5);
+        \draw[->] (3) --(6);
+        \draw[->] (3) --(7);
+        \draw[->] (3) --(8);
+        \draw[->] (4) --(6);
+        \draw[->] (4) --(7);
+        \draw[->] (4) --(8);
+        \draw[->] (5) --(6);
+        \draw[->] (5) --(7);
+        \draw[->] (5) --(8);
+        \draw[->] (6) --(9);
+        \draw[->] (6) --(10);
+        \draw[->] (7) --(9);
+        \draw[->] (7) --(10);
+        \draw[->] (8) --(9);
+        \draw[->] (8) --(10);
+        \end{tikzpicture}
+      </script>
+      <script type="text/tikz">
+        \begin{tikzpicture}
+        \draw[->] (-0.2,0) --(6,0) node[right] {$x$};
+        \draw[->] (0,-0.2) --(0,6) node[above] {$f(x)$};
+        \draw[domain =0:4] plot (\x ,{0.1* exp(\x)}) node[right] {$f(x)=\frac{1}{10}e^x$};
+        \end{tikzpicture}
+      </script>
+      <script type="text/tikz">
+      \begin{tikzpicture}
+      \draw[style=help lines,step=1cm] (-2.3,-2.3) grid (2.3,2.3);
+      
+      \draw[->,very thick] (-2.8,0) -- (2.8,0) node[right] {$x$};
+      \draw[->,very thick] (0,-2.8) -- (0,2.8) node[above] {$y$};
+      
+      \tikzset{->-/.style=
+      {decoration={markings,mark=at position #1 with 
+      {\arrow{latex}}},postaction={decorate}}}
+      \draw[thick,->-=0.5](2,0) -- (0,2);
+      \draw[thick,->-=0.5](0,2) -- (-2,0);
+      \draw[thick,->-=0.5](-2,0) -- (0,-2);
+      \draw[thick,->-=0.5](0,-2) -- (2,0);
+      
+      \filldraw[fill= blue!50,opacity=0.3] (2,0) -- (0,2) -- (-2,0) -- (0,-2) -- cycle;
+      \filldraw[fill= white,opacity=1] (-1,0) circle (0.3);
+      
+      \draw[thick, decoration={markings, mark=at position 0.3 
+      with {\arrow{latex reversed}}}, postaction={decorate}] (-1,0) circle (0.3);
+      
+      \node[above] at (1.2,1){$C$};
+      \node[above] at (-1,0.3){$C'$};
+      \end{tikzpicture}
+    </script>
+    <script type="text/tikz">
+\begin{tikzpicture}[scale=2]
+    \coordinate (A) at (0,0);
+    \coordinate (B) at (2,0);
+    \coordinate (C) at (1,1.5);
+    \draw[thick] (A) -- (B) -- (C) -- cycle;
+
+    \coordinate (MA) at ($(A)!0.5!(B)$);
+    \coordinate (MB) at ($(B)!0.5!(C)$);
+
+    \path let
+      \p1=($2*(B) - 2*(A)$), \p2=($2*(C) - 2*(B)$),
+      \p{A}=(A), \p{B}=(B), \p{C}=(C),
+      \n1={\x{B}^2+\y{B}^2-\x{A}^2-\y{A}^2}, \n2={\x{C}^2+\y{C}^2-\x{B}^2-\y{B}^2},
+      \n{cp}={\x1*\y2 - \y1*\x2},
+      \n{cx}={\n1/\n{cp}*\y2 - \n2/\n{cp}*\y1},
+      \n{cy}={\n2/\n{cp}*\x1 - \n1/\n{cp}*\x2}
+      in (\n{cx},\n{cy}) coordinate (O);
+
+    \draw[red, dashed] let
+      \p1=(O), \p2=(A), \n1={veclen(\x2-\x1, \y2-\y1)}
+      in (O) circle(\n1);
+
+    \foreach \point/\color in {A/black,B/black,C/black,O/red} {
+        \fill[\color] (\point) circle (2pt) node[below left=-3pt] {$\point$};
+    }
+
+    \node[right] at (current bounding box.east) {
+        \begin{minipage}{5cm}
+        \small
+        O formula:\\
+        $O = \frac{a^2(b-c) + b^2(c-a) + c^2(a-b)}{2\det(a,b,c)}$
+        \end{minipage}
+    };
+\end{tikzpicture}
+    </script>
+    <script type="text/tikz">
+\begin{tikzpicture}[scale=2]
+    \coordinate (A) at (0,0);
+    \coordinate (B) at (5,0);
+    \coordinate (C) at (1,1.5);
+    \draw[thick] (A) -- (B) -- (C) -- cycle;
+
+    \coordinate (MC) at ($(A)!0.5!(B)$);
+    \coordinate (MA) at ($(B)!0.5!(C)$);
+    \coordinate (C1) at ($(MC)!2cm!90:(B)$);
+    \coordinate (C2) at ($(MC)!2cm!270:(B)$);
+    \coordinate (A1) at ($(MA)!2cm!90:(C)$);
+    \coordinate (A2) at ($(MA)!2cm!270:(C)$);
+
+    \path [name path=LN1] (C1)--(C2);
+    \path [name path=LN2] (A1)--(A2);
+    \path [name intersections={of=LN1 and LN2, by=O}];
+
+    \draw[red, dashed] let
+      \p1=(O), \p2=(A), \n1={veclen(\x2-\x1, \y2-\y1)}
+      in (O) circle(\n1);
+
+    \foreach \point/\color in {A/black,B/black,C/black,O/red} {
+        \fill[\color] (\point) circle (2pt) node[below left=-3pt] {$\point$};
+    }
+\end{tikzpicture}
+    </script>
+</body>
+</html>

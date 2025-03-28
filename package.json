@@ -1,13 +1,17 @@
 {
   "name": "tikzjax",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
     "build": "webpack"
   },
-  "author": "Jim Fowler",
+  "author": "Jim Fowler & Alvin Jiang",
   "license": "(GPL-3.0 or LPPL-1.3c)",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/adriftj/tikzjax.git"
+	},
   "dependencies": {
     "browserfs": "^2.0.0",
     "dvi2html": "^1.5.0",

@@ -2,7 +2,7 @@
 *.*~
 *.log
 node_modules/
-dist/
+dist/tikzjax.js*
 package-lock.json
 
 # Files that we don't want to ignore

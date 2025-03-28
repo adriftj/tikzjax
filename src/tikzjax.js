@@ -8,22 +8,12 @@ let pages = 2500;
 var coredump = undefined;
 var code = undefined;
 
-export async function loadTexWasm(urlPrefix) {
+export async function loadWasm(urlPrefix) {
   if(coredump)
     return;
 
-  if(urlPrefix===undefined) {
-    // document.currentScript polyfill
-    if (document.currentScript === undefined) {
-      var scripts = document.getElementsByTagName('script');
-      document.currentScript = scripts[scripts.length - 1];
-    }
-
-    // Determine where we were loaded from; we'll use that to find a
-    // tikzwolke server that can handle our POSTing tikz code
-    var url = new URL(document.currentScript.src);
-    urlPrefix = url.protocol + '//' + url.host; // host includes the port
-  }
+  if(urlPrefix===undefined)
+    urlPrefix = window.location.origin + '/wasm';
 
   let tex = await fetch(urlPrefix + '/tex.wasm');
   code = await tex.arrayBuffer();
@@ -96,7 +86,7 @@ function tex2html(text) {
   return {machine, html};
 }
 
-export function tikzjax(root){
+export function render(root){
   if(typeof root === 'string') {
     return tex2html(root);
   }
