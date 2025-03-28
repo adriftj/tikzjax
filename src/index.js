@@ -1,8 +1,8 @@
-import { TikZJax } from "./TikZJax";
-
-window.TikZJax = TikZJax;
-if (!window.TikZJaxNoAutostart) {
-    document.addEventListener("DOMContentLoaded", function () {
-        TikZJax(document);
-    });
-}
+import { loadTexWasm, tikzjax } from './tikzjax';
+window.tikzjax = tikzjax;
+let loadPromise = loadTexWasm();
+document.addEventListener("DOMContentLoaded", function () {
+  loadPromise.then(function(){
+    tikzjax(document);
+  });
+});

@@ -4,28 +4,28 @@ import * as library from './library';
 import pako from 'pako';
 import fetchStream from 'fetch-readablestream';
 
-// document.currentScript polyfill
-if (document.currentScript === undefined) {
-  var scripts = document.getElementsByTagName('script');
-  document.currentScript = scripts[scripts.length - 1];
-}
-
-// Determine where we were loaded from; we'll use that to find a
-// tikzwolke server that can handle our POSTing tikz code
-var url = new URL(document.currentScript.src);
-// host includes the port
-var host = url.host;
-var urlRoot = url.protocol + '//' + host;
-
 let pages = 2500;
 var coredump = undefined;
 var code = undefined;
 
-async function load() {
-  let tex = await fetch(urlRoot + '/tex.wasm');
+export async function loadTexWasm(urlPrefix) {
+  if(urlPrefix===undefined) {
+    // document.currentScript polyfill
+    if (document.currentScript === undefined) {
+      var scripts = document.getElementsByTagName('script');
+      document.currentScript = scripts[scripts.length - 1];
+    }
+
+    // Determine where we were loaded from; we'll use that to find a
+    // tikzwolke server that can handle our POSTing tikz code
+    var url = new URL(document.currentScript.src);
+    urlPrefix = url.protocol + '//' + url.host; // host includes the port
+  }
+
+  let tex = await fetch(urlPrefix + '/tex.wasm');
   code = await tex.arrayBuffer();
 
-  let response = await fetchStream(urlRoot + '/core.dump.gz');
+  let response = await fetchStream(urlPrefix + '/core.dump.gz');
   const reader = response.body.getReader();
   const inf = new pako.Inflate();
   
@@ -49,7 +49,7 @@ function copy(src)  {
   return dst;
 }
 
-async function tex(input) {
+function tex(input) {
   if (input.match('\\\\begin *{document}') === null) {
     input = '\\begin{document}\n' + input;
   }
@@ -78,12 +78,10 @@ async function tex(input) {
   return library.readFileSync( "sample.dvi" );
 }
 
-async function tex2html(text) {
-  // only load resources if we actually need to process tikz
-  if (coredump == undefined) {
-    await load();
-  }
-  let dvi = await tex(text);
+function tex2html(text) {
+  if (coredump == undefined)
+    throw "tex wasm hasn't loaded";
+  let dvi = tex(text);
   let html = "";  
   const page = new Writable({
     write(chunk, _, callback) {
@@ -95,15 +93,15 @@ async function tex2html(text) {
   return {machine, html};
 }
 
-export async function TikZJax(root){
+export function tikzjax(root){
   if(typeof root === 'string') {
     return tex2html(root);
   }
 
-  async function process(elt){
+  function process(elt){
     var text = elt.childNodes[0].nodeValue;
     var div = document.createElement('div');
-    let {machine, html} = await tex2html(text);
+    let {machine, html} = tex2html(text);
     div.style.display = 'flex';
     div.style.width = machine.paperwidth.toString() + "pt";
     div.style.height = machine.paperheight.toString() + "pt";
@@ -126,9 +124,5 @@ export async function TikZJax(root){
   var scripts = root.getElementsByTagName('script');
   var tikzScripts = Array.prototype.slice.call(scripts).filter(
     (e) => (e.getAttribute('type') === 'text/tikz'));
-
-  tikzScripts.reduce( async (promise, element) => {
-    await promise;
-    return process(element);
-  }, Promise.resolve());
+  tikzScripts.reduce((_, element)=>{return process(element), 0;}, 0);
 };
