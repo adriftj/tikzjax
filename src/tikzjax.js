@@ -9,6 +9,9 @@ var coredump = undefined;
 var code = undefined;
 
 export async function loadTexWasm(urlPrefix) {
+  if(coredump)
+    return;
+
   if(urlPrefix===undefined) {
     // document.currentScript polyfill
     if (document.currentScript === undefined) {
