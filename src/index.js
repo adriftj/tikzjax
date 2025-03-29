@@ -27,3 +27,15 @@ import { loadWasm, render } from './tikzjax';
       render: render
   };
 }));
+
+// ESM exports
+export {
+  loadWasm,
+  render
+}
+
+// CJS exports and ESM default export
+export default {
+  loadWasm: loadWasm,
+  render: render
+}

@@ -13,29 +13,20 @@
       }
       .input { width: 800px; height: 600px; }
       .btn { width: 80px; }
-      .result { flex-grow:1; }
+      .result {
+        flex-grow:1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
     </style>
     <script>
       async function showTikz() {
         let eIn = document.getElementById('input');
         let text = eIn.value;
-        let {machine, html} = tikzjax.render(text);
-
+        let {width, height, html} = tikzjax.render(text);
         let eOut = document.getElementById('result');
-        eOut.style.display = 'flex';
-        //eOut.style.width = machine.paperwidth.toString() + "pt";
-        //eOut.style.height = machine.paperheight.toString() + "pt";
-        eOut.style['align-items'] = 'center';
-        eOut.style['justify-content'] = 'center';
         eOut.innerHTML = html;
-        let svg = eOut.getElementsByTagName('svg');
-        if (svg[0]) {
-          svg[0].setAttribute("width", machine.paperwidth.toString() + "pt");
-          svg[0].setAttribute("height", machine.paperheight.toString() + "pt");
-          svg[0].setAttribute("viewBox", `-72 -72 ${machine.paperwidth} ${machine.paperheight}`);
-        } else {
-          console.error( "Missing svg element" );
-        }
       }
     </script>
 </head>

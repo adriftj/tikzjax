@@ -71,6 +71,12 @@ function tex(input) {
   return library.readFileSync( "sample.dvi" );
 }
 
+const rxCssWidth = new RegExp(/width:[ \t0-9.%pt]*;/);
+const rxCssHeight = new RegExp(/height:[ \t0-9.%pt]*;/);
+const rxSvgWidth = new RegExp(/width="[0-9.in]*"/);
+const rxSvgHeight = new RegExp(/height="[0-9.in]*"/);
+const rxSvgViewBox = new RegExp(/viewBox="[0-9. \t]*"/);
+
 function tex2html(text) {
   if (coredump == undefined)
     throw "tex wasm hasn't loaded";
@@ -82,8 +88,24 @@ function tex2html(text) {
       callback();
     }
   });
+
   let machine = dvi2html( Buffer.from(dvi), page );
-  return {machine, html};
+  let w = machine.paperwidth.toString();
+  let h = machine.paperheight.toString();
+  /* `html` will be start with:
+  <div style="position: relative; width: 100%; height: 17.08821105957031pt;" class="page">
+  <svg width="1in" height="1in" viewBox="0 0 72 72" style="position: absolute; top: 17.08821105957031pt; left: -60.02537536621092pt; overflow: visible;">
+  we need replace width, height, viewbox will `w`, `h`
+  */
+  return {
+    width: machine.paperwidth,
+    height: machine.paperheight,
+    html: html.replace(rxCssWidth, 'width: '+w+'pt;')
+             .replace(rxCssHeight, 'height: '+h+'pt;')
+             .replace(rxSvgWidth, 'width='+w+'pt')
+             .replace(rxSvgHeight, 'height='+h+'pt')
+             .replace(rxSvgViewBox, 'viewBox="-72 -72 '+w+' '+h+'"')
+  };
 }
 
 export function render(root){
@@ -94,23 +116,13 @@ export function render(root){
   function process(elt){
     var text = elt.childNodes[0].nodeValue;
     var div = document.createElement('div');
-    let {machine, html} = tex2html(text);
+    let {width, height, html} = tex2html(text);
     div.style.display = 'flex';
-    div.style.width = machine.paperwidth.toString() + "pt";
-    div.style.height = machine.paperheight.toString() + "pt";
+    div.style.width = width.toString() + "pt";
+    div.style.height = height.toString() + "pt";
     //div.style['align-items'] = 'center';
     //div.style['justify-content'] = 'center';
-
     div.innerHTML = html;
-    let svg = div.getElementsByTagName('svg');
-    if (svg[0]) {
-      svg[0].setAttribute("width", machine.paperwidth.toString() + "pt");
-      svg[0].setAttribute("height", machine.paperheight.toString() + "pt");
-      svg[0].setAttribute("viewBox", `-72 -72 ${machine.paperwidth} ${machine.paperheight}`);
-    } else {
-      console.error( "Missing svg element" );
-    }
-
     elt.parentNode.replaceChild(div, elt);
   };
 
