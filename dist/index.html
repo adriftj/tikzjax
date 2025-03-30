@@ -2,7 +2,6 @@
 <head>
     <title>tikz live example</title>
     <link rel="stylesheet" type="text/css" href="fonts.css">
-    <script src="tikzjax.js"></script>
     <style>
       .outer { display: flex; }
       .left {
@@ -20,6 +19,13 @@
         justify-content: center;
       }
     </style>
+    <script type="module">
+      import tikzjax from './tikzjax.mjs';
+      tikzjax.loadEngine().then(()=>{
+        console.log("TikzJax engine loaded ok");        
+      });
+      window.tikzjax = tikzjax;
+    </script>
     <script>
       function showTikz() {
         let eIn = document.getElementById('input');

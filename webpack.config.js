@@ -1,13 +1,15 @@
 const webpack = require('webpack');
+const { merge } = require('webpack-merge');
+const TerserPlugin = require('terser-webpack-plugin');
 const path = require('path');
 
-module.exports = {
-  mode: 'development',
-  entry: './src/index.js',
-  output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'tikzjax.js',
+const baseConfig = {
+  mode: 'production',
+  optimization: {
+    minimize: true,
+    minimizer: [new TerserPlugin()],
   },
+  entry: './src/index.js',
   resolve: {
     alias: {
       'fs': 'browserfs/dist/shims/fs.js',
@@ -17,11 +19,39 @@ module.exports = {
     fallback: {
       buffer: require.resolve('buffer/'),
     },
-  },  
-  target: 'web',
+  },
   plugins: [
     new webpack.ProvidePlugin({
         Buffer: ['buffer', 'Buffer'],
     }),
   ]
 };
+
+const umdConfig = merge(baseConfig, {
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'tikzjax.js',
+    library: {
+      type: 'umd',
+      umdNamedDefine: false
+    },
+    globalObject: 'this'
+  },
+  target: 'web',
+});
+
+const esmConfig = merge(baseConfig, {
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'tikzjax.mjs',
+    library: {
+      type: 'module'
+    }
+  },
+  experiments: {
+    outputModule: true
+  },
+  target: ['web', 'es5']
+});
+
+module.exports = [umdConfig, esmConfig];

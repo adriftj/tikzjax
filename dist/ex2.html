@@ -3,6 +3,12 @@
     <title>tikz test</title>
     <link rel="stylesheet" type="text/css" href="fonts.css">
     <script src="tikzjax.js"></script>
+    <script>
+      if(tikzjax.render == undefined)
+        console.log("Error: tikzjax is not defined!!!");
+      else
+        console.log("Ok: tikzjax.");
+    </script>
 </head>
 <body>
       <script type="text/tikz">
