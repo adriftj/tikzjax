@@ -1,6 +1,6 @@
 {
   "name": "tikzjax",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
   "author": "Jim Fowler & Alvin Jiang",
   "license": "(GPL-3.0 or LPPL-1.3c)",
@@ -8,15 +8,21 @@
     "type": "git",
     "url": "git+https://github.com/adriftj/tikzjax.git"
   },
+  "files": [
+    "dist/"
+  ],
   "scripts": {
     "build": "webpack"
   },
+  "main": "./dist/tikzjax.js",
+  "module": "./dist/tikzjax.mjs",
   "exports": {
     ".": {
       "import": "./dist/tikzjax.mjs",
       "require": "./dist/tikzjax.js",
       "browser": "./dist/tikzjax.js"
-    }
+    },
+    "./*" : "./*"
   },
   "dependencies": {
     "browserfs": "^2.0.0",
