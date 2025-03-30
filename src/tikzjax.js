@@ -8,7 +8,7 @@ let pages = 2500;
 var coredump = undefined;
 var code = undefined;
 
-export async function loadWasm(urlPrefix) {
+export async function loadEngine(urlPrefix) {
   if(coredump)
     return;
 
@@ -33,7 +33,7 @@ export async function loadWasm(urlPrefix) {
     reader.releaseLock();
   }
 
-  coredump = new Uint8Array( inf.result, 0, pages*65536 );
+  coredump = new Uint8Array(inf.result, 0, pages*65536);
 }
 
 function copy(src)  {
@@ -49,15 +49,12 @@ function tex(input) {
   input = input + '\n\\end{document}\n';
 
   library.deleteEverything();
-  library.writeFileSync( "sample.tex", Buffer.from(input) );
-
+  library.writeFileSync("sample.tex", Buffer.from(input));
   let memory = new WebAssembly.Memory({initial: pages, maximum: pages});
-
   let buffer = new Uint8Array( memory.buffer, 0, pages*65536 );
-  buffer.set( copy(coredump) );
-
-  library.setMemory( memory.buffer );
-  library.setInput( " sample.tex \n\\end\n" );
+  buffer.set(copy(coredump));
+  library.setMemory(memory.buffer);
+  library.setInput("sample.tex \n\\end\n");
 
   var module = new WebAssembly.Module(code);
   var wasm = new WebAssembly.Instance(module, { library: library,
@@ -65,7 +62,6 @@ function tex(input) {
 
   const wasmExports = wasm.exports;
   library.setWasmExports( wasmExports );
-
   wasm.exports.main();
 
   return library.readFileSync( "sample.dvi" );
@@ -77,7 +73,7 @@ const rxSvgWidth = new RegExp(/width="[0-9.in]*"/);
 const rxSvgHeight = new RegExp(/height="[0-9.in]*"/);
 const rxSvgViewBox = new RegExp(/viewBox="[0-9. \t]*"/);
 
-function tex2html(text) {
+export function render(text) {
   if (coredump == undefined)
     throw "tex wasm hasn't loaded";
   let dvi = tex(text);
@@ -108,26 +104,18 @@ function tex2html(text) {
   };
 }
 
-export function render(root){
-  if(typeof root === 'string') {
-    return tex2html(root);
-  }
-
-  function process(elt){
-    var text = elt.childNodes[0].nodeValue;
-    var div = document.createElement('div');
-    let {width, height, html} = tex2html(text);
-    div.style.display = 'flex';
-    div.style.width = width.toString() + "pt";
-    div.style.height = height.toString() + "pt";
-    //div.style['align-items'] = 'center';
-    //div.style['justify-content'] = 'center';
-    div.innerHTML = html;
-    elt.parentNode.replaceChild(div, elt);
-  };
-
+export function renderScripts(root){
   var scripts = root.getElementsByTagName('script');
   var tikzScripts = Array.prototype.slice.call(scripts).filter(
     (e) => (e.getAttribute('type') === 'text/tikz'));
-  tikzScripts.reduce((_, element)=>{return process(element), 0;}, 0);
+  tikzScripts.reduce((_, elt) => {
+    var text = elt.childNodes[0].nodeValue;
+    var div = document.createElement('div');
+    let {width, height, html} = render(text);
+    div.style.display = 'flex';
+    div.style.width = width.toString() + "pt";
+    div.style.height = height.toString() + "pt";
+    div.innerHTML = html;
+    elt.parentNode.replaceChild(div, elt);
+  }, 0);
 };

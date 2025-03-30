@@ -1,4 +1,4 @@
-import { loadWasm, render } from './tikzjax';
+import { loadEngine, render, renderScripts } from './tikzjax';
 
 (function(root, factory) {
   // check AMD (RequireJS)
@@ -14,28 +14,17 @@ import { loadWasm, render } from './tikzjax';
   // browser(root is window normally)
   else {
       root.tikzjax = factory();
-      let loadPromise = loadWasm();
+      let loadPromise = loadEngine();
       document.addEventListener("DOMContentLoaded", function () {
         loadPromise.then(function(){
-          render(document);
+          renderScripts(document);
         });
       });
   }
 }(typeof self !== 'undefined' ? self : this, function() {
   return {
-      loadWasm: loadWasm,
-      render: render
+      loadEngine,
+      render,
+      renderScripts
   };
 }));
-
-// ESM exports
-export {
-  loadWasm,
-  render
-}
-
-// CJS exports and ESM default export
-export default {
-  loadWasm: loadWasm,
-  render: render
-}

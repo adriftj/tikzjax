@@ -21,7 +21,7 @@
       }
     </style>
     <script>
-      async function showTikz() {
+      function showTikz() {
         let eIn = document.getElementById('input');
         let text = eIn.value;
         let {width, height, html} = tikzjax.render(text);
